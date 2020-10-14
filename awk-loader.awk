@@ -9,9 +9,9 @@ function get_modules(module_path,  rtrn_str,  rc,  cmd){
 	return rtrn_str
 }
 
-function gen_module(module_path, name,  rtrn_str,  rc,  cmd){
+function gen_module(module_path, name, rtrn_str,  rc,  cmd){
 	rtrn_str = ""
-	cmd = "cd "module_path "&& awk -v module_name="name" -f process-module.awk"
+	cmd = "cd "module_path"&& awk -v module_name="name" -f "args["coms_dir"]"/process-module.awk "name".awk"
 	while (cmd | getline line){
 		rtrn_str = rtrn_str ""line"\n"
 	}
@@ -33,6 +33,7 @@ function get_args(args){
 		if (ARGV[arg] == "-o"){
 			args["output"] = ARGV[arg + 1]
 		}
+		args["coms_dir"] = ENVIRON["subcommands_dir"]
 	}
 	for (arg in ARGV){
 		if (arg !=1){
@@ -62,8 +63,9 @@ END{
 			print "==> "requested_modules[item]" not available in path: "module_path
 			exit 1
 		}
-		module_file = module_file""gen_module(args["module_path"])"\n"
+		module_file = module_file""gen_module(args["module_path"], requested_modules[item])"\n"
 
 	}
+	# generate runnable awk program with included function
 	print module_file""program_file > args["output"]
 }

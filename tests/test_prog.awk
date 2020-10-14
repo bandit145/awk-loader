@@ -1,4 +1,4 @@
-#module: test.awk
+#module: test
 
 BEGIN {
 	test_test()

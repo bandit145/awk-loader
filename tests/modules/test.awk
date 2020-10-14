@@ -1,8 +1,8 @@
 #sdgnsog
 function test(){
-	print hello
+	print "hello"
 }
 
 function wat(doot){
-	print(doot)
+	print doot
 }
