@@ -19,6 +19,31 @@ function gen_module(module_path, name, rtrn_str,  rc,  cmd){
 	return rtrn_str
 }
 
+function get_sub_mods(requested_modules, module_path, split_line,  req_list,  new_mods,  line,  item){
+	new_mods = ""
+	split(requested_modules, req_list, " ")
+	for (item in req_list){
+		while( "cat "module_path"/"req_list[item]".awk" | getline line ){
+			split(line, split_line, " ")
+			if ( !(split_line[1] ~ "#")){
+				break
+			}
+			if (split_line[1] == "#module:"){
+				# check for looping dependencies
+				if ( !(index(requested_modules, split_line[2]))){
+					requested_modules = requested_modules""split_line[2]" "
+					new_mods = requested_modules
+				}
+			}	
+		}
+		close(module_path"/"req_list[item]".awk")
+	}
+	if (length(new_mods) > 0){
+		new_mods = new_mods""get_sub_mods(new_mods, module_path)
+	}
+	return new_mods
+}
+
 function get_args(args){
 	for (arg in ARGV){
 		if (ARGV[arg] == "-m"){
@@ -46,24 +71,27 @@ BEGIN{
 	module_file = ""
 	split("", args)
 	split("", module_arr)
-	split("", requested_modules)
+	requested_modules = ""
 	get_args(args)
 	program_file = ""
 	avail_modules = get_modules(args["module_path"])
 }
 
 $1 == "#module:"{
-	requested_modules[length(requested_modules) + 1] = $2
+	requested_modules = requested_modules$2" "
 }
 {program_file = program_file"\n"$0}
 
 END{
-	for (item in requested_modules){
-		if (!(match(avail_modules, requested_modules[item]))){
-			print "==> "requested_modules[item]" not available in path: "module_path
+	requested_modules = get_sub_mods(requested_modules, args["module_path"], accum)
+	print "accum: "requested_modules
+	split(requested_modules, req_list, " ")
+	for (item in req_list){
+		if (!(match(avail_modules, req_list[item]))){
+			print "==> "req_list[item]" not available in path: "module_path
 			exit 1
 		}
-		module_file = module_file""gen_module(args["module_path"], requested_modules[item])"\n"
+		module_file = module_file""gen_module(args["module_path"], req_list[item])"\n"
 
 	}
 	# generate runnable awk program with included function
