@@ -1,4 +1,4 @@
-#!/usr/bin/env awk -f
+#!/usr/bin/awk -f
 function get_modules(module_path,  rtrn_str,  rc,  cmd){
 	rtrn_str = ""
 	cmd = "find "module_path" -mindepth 1"
@@ -11,7 +11,7 @@ function get_modules(module_path,  rtrn_str,  rc,  cmd){
 
 function gen_module(module_path, name, rtrn_str,  rc,  cmd){
 	rtrn_str = ""
-	cmd = "cd "module_path"&& awk -v module_name="name" -f "args["coms_dir"]"/process-module.awk "name".awk"
+	cmd = "cd "module_path"&& awk -v module_name="name" -f "args["coms_dir"]"process-module.awk "name".awk"
 	while (cmd | getline line){
 		rtrn_str = rtrn_str ""line"\n"
 	}
@@ -58,16 +58,33 @@ function get_args(args){
 		if (ARGV[arg] == "-o"){
 			args["output"] = ARGV[arg + 1]
 		}
-		args["coms_dir"] = ENVIRON["subcommands_dir"]
+		if (ENVIRON["subcommands_dir"] == ""){
+			args["coms_dir"] = ""
+		}
+		else{
+			args["coms_dir"] = ENVIRON["subcommands_dir"]"/"
+		}
 	}
 	for (arg in ARGV){
 		if (arg !=1){
 			delete ARGV[arg]
 		}
 	}
+
+	if (! args["module_path"]){
+		print "missing module path '-m' arg"
+		exit_flag = 1
+		exit 1
+	}
+	else if (! args["output"]){
+		print "missing output '-o' arg"
+		exit_flag = 1
+		exit 1
+	}
 }
 
 BEGIN{
+	exit_flag = 0
 	module_file = ""
 	split("", args)
 	split("", module_arr)
@@ -83,8 +100,10 @@ $1 == "#module:"{
 {program_file = program_file"\n"$0}
 
 END{
+	if (exit_flag){
+		exit 1
+	}
 	requested_modules = get_sub_mods(requested_modules, args["module_path"], accum)
-	print "accum: "requested_modules
 	split(requested_modules, req_list, " ")
 	for (item in req_list){
 		if (!(match(avail_modules, req_list[item]))){
