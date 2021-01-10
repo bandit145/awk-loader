@@ -1,7 +1,7 @@
 #!/usr/bin/awk -f
 function get_modules(module_path,  rtrn_str,  rc,  cmd){
 	rtrn_str = ""
-	cmd = "find "module_path" -mindepth 1"
+	cmd = "find "module_path" -type f"
 	while (cmd | getline line){
 		rtrn_str = rtrn_str" "line
 	}
@@ -55,7 +55,7 @@ function get_args(args){
 		else{
 			args["verbose"] = 0
 		}
-		if (ARGV[arg] == "-o"){
+		if (ARGV[arg] == "-out"){
 			args["output"] = ARGV[arg + 1]
 		}
 		if (ENVIRON["subcommands_dir"] == ""){
@@ -91,7 +91,9 @@ BEGIN{
 	requested_modules = ""
 	get_args(args)
 	program_file = ""
+	print "module path: "args["module_path"]
 	avail_modules = get_modules(args["module_path"])
+	print avail_modules
 }
 
 $1 == "#module:"{
