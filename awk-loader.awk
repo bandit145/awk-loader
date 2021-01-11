@@ -91,9 +91,7 @@ BEGIN{
 	requested_modules = ""
 	get_args(args)
 	program_file = ""
-	print "module path: "args["module_path"]
 	avail_modules = get_modules(args["module_path"])
-	print avail_modules
 }
 
 $1 == "#module:"{
